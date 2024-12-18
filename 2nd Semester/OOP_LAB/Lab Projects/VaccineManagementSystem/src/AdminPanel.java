@@ -255,21 +255,25 @@ public class AdminPanel extends javax.swing.JFrame {
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         // TODO add your handling code here:
-        String ID = tfID.getText();
-        String Name = tfName.getText();
-        String Manufacture = tfManufacture.getText();
-        String DOses = tfDoses.getText();
-        
-        if(ID.isEmpty() || Name.isEmpty() || Manufacture.isEmpty() || DOses.isEmpty() ){
+         String ID = tfID.getText().trim();
+        String Name = tfName.getText().trim();
+        String Manufacture = tfManufacture.getText().trim();
+        String Doses = tfDoses.getText().trim();
+
+        if(ID.isEmpty() || Name.isEmpty() || Manufacture.isEmpty() || Doses.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                                           "Please enter all fields",
-                                          "Try again",
+                                          "Input Error",
                                           JOptionPane.ERROR_MESSAGE);
-        }
-        else{
+        } else if(!Doses.matches("\\d+")) { // Check if Doses is numeric
+            JOptionPane.showMessageDialog(this,
+                                          "Doses must be a numeric value.",
+                                          "Input Error",
+                                          JOptionPane.ERROR_MESSAGE);
+        } else {
             DefaultTableModel model = (DefaultTableModel) tableAdmin.getModel();
-            model.addRow(new Object[]{ID,Name,Manufacture,DOses});
-            
+            model.addRow(new Object[]{ID, Name, Manufacture, Doses});
+            // Clear the form
             tfID.setText("");
             tfName.setText("");
             tfManufacture.setText("");
@@ -281,29 +285,24 @@ public class AdminPanel extends javax.swing.JFrame {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
         int row = tableAdmin.getSelectedRow();
-        if(row==1){
+        if(row == -1) { // No row selected
             JOptionPane.showMessageDialog(this,
-                                          "Now vaccine is selected",
-                                          "At least select one vaccine.",
+                                          "No vaccine selected. Please select one to delete.",
+                                          "Error",
                                           JOptionPane.ERROR_MESSAGE);
-        }
-        else{
+        } else {
             DefaultTableModel model = (DefaultTableModel) tableAdmin.getModel();
             model.removeRow(row);
-        }
+        }   
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         // TODO add your handling code here:
         DefaultTableModel model = (DefaultTableModel) tableAdmin.getModel();
         Vector<Vector> tableData = model.getDataVector();
-        try {
-            FileOutputStream file = new FileOutputStream("file.bin");
-            ObjectOutputStream output = new ObjectOutputStream(file);
-            
+        try (FileOutputStream file = new FileOutputStream("file.bin");
+             ObjectOutputStream output = new ObjectOutputStream(file)) {
             output.writeObject(tableData);
-            output.close();
-            file.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -311,18 +310,13 @@ public class AdminPanel extends javax.swing.JFrame {
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         // TODO add your handling code here:
-        try {
-            FileInputStream file = new FileInputStream("file.bin");
-            ObjectInputStream input = new ObjectInputStream(file);
-            Vector<Vector> tableData = (Vector<Vector>)input.readObject();
-            input.close();
-            file.close();
-            DefaultTableModel model = (DefaultTableModel) tableAdmin.getModel();
-            for(int i=0;i<tableData.size();i++){
-                Vector row = tableData.get(i);
-                model.addRow(new Object[]{row.get(0),row.get(1),row.get(2),row.get(4)});
+        try (FileInputStream file = new FileInputStream("file.bin");
+         ObjectInputStream input = new ObjectInputStream(file)) {
+        Vector<Vector> tableData = (Vector<Vector>) input.readObject();
+        DefaultTableModel model = (DefaultTableModel) tableAdmin.getModel();
+        for (Vector row : tableData) {
+                model.addRow(row.toArray());
             }
-            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -353,3 +347,4 @@ public class AdminPanel extends javax.swing.JFrame {
     private javax.swing.JTextField tfName;
     // End of variables declaration//GEN-END:variables
 }
+
